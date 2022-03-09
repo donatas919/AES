@@ -7,83 +7,118 @@ namespace encrypt_decrypt_system
 {
     internal class Program
     {
-        public static string Encrypt(string plainText, string keyString, int mode)
+        public static string Encrypt(string plainText, string keyString, int mode, string IV)
         {
-            byte[] cipherData;
-            Aes aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(keyString);
-            aes.GenerateIV();
-            if (mode == 1)
+            switch(mode)
             {
-                aes.Mode = CipherMode.ECB;
-                ICryptoTransform cipher = aes.CreateEncryptor(aes.Key, null);
-            }
-            else if (mode == 2)
-            {
-                aes.Mode = CipherMode.CBC;
-                ICryptoTransform cipher = aes.CreateEncryptor(aes.Key, aes.IV);
-            }
-            else if (mode == 3)
-            {
-                aes.Mode = CipherMode.CFB;
-            }
-            //ICryptoTransform cipher = aes.CreateEncryptor(aes.Key, aes.IV);
-
-            using (MemoryStream ms = new MemoryStream())
-            {
-                using (CryptoStream cs = new CryptoStream(ms, cipher, CryptoStreamMode.Write))
+                case 1:
                 {
-                    using (StreamWriter sw = new StreamWriter(cs))
+                    byte[] src = Encoding.UTF8.GetBytes(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.Mode = CipherMode.ECB;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.KeySize = 128;
+
+                    using (ICryptoTransform encrypt = aes.CreateEncryptor(key, null))
                     {
-                        sw.Write(plainText);
+                        byte[] dest = encrypt.TransformFinalBlock(src, 0, src.Length);
+                        encrypt.Dispose();
+                        return Convert.ToBase64String(dest);
                     }
                 }
+                case 2:
+                {
+                    byte[] src = Encoding.UTF8.GetBytes(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    byte[] ccc = Encoding.UTF8.GetBytes(IV);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.KeySize = 128;
 
-                cipherData = ms.ToArray();
+                    using (ICryptoTransform encrypt = aes.CreateEncryptor(key, ccc))
+                    {
+                        byte[] dest = encrypt.TransformFinalBlock(src, 0, src.Length);
+                        encrypt.Dispose();
+                        return Convert.ToBase64String(dest);
+                    }
+                }
+                case 3:
+                {
+                    byte[] src = Encoding.UTF8.GetBytes(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    byte[] ccc = Encoding.UTF8.GetBytes(IV);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.Mode = CipherMode.CFB;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.KeySize = 128;
+
+                    using (ICryptoTransform encrypt = aes.CreateEncryptor(key, ccc))
+                    {
+                        byte[] dest = encrypt.TransformFinalBlock(src, 0, src.Length);
+                        encrypt.Dispose();
+                        return Convert.ToBase64String(dest);
+                    }
+                }
+                default:
+                    return "Something went wrong";
             }
-
-            byte[] combinedData = new byte[aes.IV.Length + cipherData.Length];
-            Array.Copy(aes.IV, 0, combinedData, 0, aes.IV.Length);
-            Array.Copy(cipherData, 0, combinedData, aes.IV.Length, cipherData.Length);
-            return Convert.ToBase64String(combinedData);
         }
 
-        public static string Decrypt(string combinedString, string keyString,int mode)
+        public static string Decrypt(string plainText, string keyString,int mode, string IV)
         {
-            string plainText;
-            byte[] combinedData = Convert.FromBase64String(combinedString);
-            Aes aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(keyString);
-            byte[] iv = new byte[aes.BlockSize / 8];
-            byte[] cipherText = new byte[combinedData.Length - iv.Length];
-            Array.Copy(combinedData, iv, iv.Length);
-            Array.Copy(combinedData, iv.Length, cipherText, 0, cipherText.Length);
-            aes.IV = iv;
-            if (mode == 1)
+            switch(mode)
             {
-                aes.Mode = CipherMode.ECB;
-            }
-            else if (mode == 2)
-            {
-                aes.Mode = CipherMode.CBC;
-            }
-            else if (mode == 3)
-            {
-                aes.Mode = CipherMode.CFB;
-            }
-            ICryptoTransform decipher = aes.CreateDecryptor(aes.Key, aes.IV);
-
-            using (MemoryStream ms = new MemoryStream(cipherText))
-            {
-                using (CryptoStream cs = new CryptoStream(ms, decipher, CryptoStreamMode.Read))
+                case 1:
                 {
-                    using (StreamReader sr = new StreamReader(cs))
+                    byte[] src = Convert.FromBase64String(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.KeySize = 128;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Mode = CipherMode.ECB;
+                    using (ICryptoTransform decrypt = aes.CreateDecryptor(key, null))
                     {
-                        plainText = sr.ReadToEnd();
+                        byte[] dest = decrypt.TransformFinalBlock(src, 0, src.Length);
+                        decrypt.Dispose();
+                        return Encoding.UTF8.GetString(dest);
                     }
                 }
-
-                return plainText;
+                case 2:
+                {
+                    byte[] src = Convert.FromBase64String(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    byte[] ccc = Encoding.UTF8.GetBytes(IV);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.KeySize = 128;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Mode = CipherMode.CBC;
+                    using (ICryptoTransform decrypt = aes.CreateDecryptor(key, ccc))
+                    {
+                        byte[] dest = decrypt.TransformFinalBlock(src, 0, src.Length);
+                        decrypt.Dispose();
+                        return Encoding.UTF8.GetString(dest);
+                    }
+                }
+                case 3:
+                {
+                    byte[] src = Convert.FromBase64String(plainText);
+                    byte[] key = Encoding.ASCII.GetBytes(keyString);
+                    byte[] ccc = Encoding.UTF8.GetBytes(IV);
+                    RijndaelManaged aes = new RijndaelManaged();
+                    aes.KeySize = 128;
+                    aes.Padding = PaddingMode.PKCS7;
+                    aes.Mode = CipherMode.CFB;
+                    using (ICryptoTransform decrypt = aes.CreateDecryptor(key, ccc))
+                    {
+                        byte[] dest = decrypt.TransformFinalBlock(src, 0, src.Length);
+                        decrypt.Dispose();
+                        return Encoding.UTF8.GetString(dest);
+                    }
+                }
+                default:
+                    return "Something went wrong";
             }
         }
 
@@ -92,8 +127,11 @@ namespace encrypt_decrypt_system
             Console.WriteLine("Enter plain text:");
             string plainText = Console.ReadLine();
             
-            Console.WriteLine("Enter Insert secret key:");
+            Console.WriteLine("Enter secret key:");
             string secreteKey = Console.ReadLine();
+            
+            Console.WriteLine("Enter IV:");
+            string ccc = Console.ReadLine();
 
             int x;
             Console.WriteLine("Choose one:");
@@ -111,14 +149,14 @@ namespace encrypt_decrypt_system
             switch(x)
             {
                 case 1:
-                    string roundtrip = Encrypt(plainText, secreteKey, mode);
+                    string roundtrip = Encrypt(plainText, secreteKey, mode, ccc);
                     
                     //Display the original data and the decrypted data.
                     Console.WriteLine("Original:   {0}", plainText);
                     Console.WriteLine("Round Trip: {0}", roundtrip);
                     break;
                 case 2:
-                    string roundtrip01 = Decrypt(plainText, secreteKey, mode);
+                    string roundtrip01 = Decrypt(plainText, secreteKey, mode, ccc);
                     
                     //Display the original data and the decrypted data.
                     Console.WriteLine("Original:   {0}", plainText);
