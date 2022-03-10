@@ -1,5 +1,6 @@
 ﻿using System;
-using System.IO; 
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -124,8 +125,34 @@ namespace encrypt_decrypt_system
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("Enter plain text:");
-            string plainText = Console.ReadLine();
+            Console.WriteLine("Choose one:");
+            Console.WriteLine("-1- input plain text from keyboard");
+            Console.WriteLine("-2- read plain text from file");
+            int input = Convert.ToInt32(Console.ReadLine());
+            string plainText;
+            
+            switch (input)
+            {
+                case 1:
+                {
+                    Console.WriteLine("Enter plain text:");
+                    plainText = Console.ReadLine();
+                } 
+                    break;
+                case 2:
+                {
+                    using (StreamReader readText = new StreamReader("plainText.txt"))
+                    {
+                        plainText = readText.ReadLine();
+                    }
+                }
+                    break;
+                default: 
+                    Console.WriteLine("Wrong input");
+                    return;
+            }
+            
+            
             
             Console.WriteLine("Enter secret key:");
             string secreteKey = Console.ReadLine();
@@ -149,18 +176,36 @@ namespace encrypt_decrypt_system
             switch(x)
             {
                 case 1:
+                {
                     string roundtrip = Encrypt(plainText, secreteKey, mode, ccc);
-                    
+
                     //Display the original data and the decrypted data.
                     Console.WriteLine("Original:   {0}", plainText);
                     Console.WriteLine("Round Trip: {0}", roundtrip);
+                    //Write original and encrypted text to file
+                    using (StreamWriter writeText = new StreamWriter("plainText.txt"))
+                    {
+                        writeText.WriteLine(plainText);
+                        writeText.WriteLine(roundtrip);
+                        //writeText.Close();
+                    }
+                }
                     break;
                 case 2:
-                    string roundtrip01 = Decrypt(plainText, secreteKey, mode, ccc);
-                    
+                {
+                    string roundtrip = Decrypt(plainText, secreteKey, mode, ccc);
+
                     //Display the original data and the decrypted data.
                     Console.WriteLine("Original:   {0}", plainText);
-                    Console.WriteLine("Round Trip: {0}", roundtrip01);
+                    Console.WriteLine("Round Trip: {0}", roundtrip);
+                    //Write original and decrypted text to file
+                    using (StreamWriter writeText = new StreamWriter("plainText.txt"))
+                    {
+                        writeText.WriteLine(plainText);
+                        writeText.WriteLine(roundtrip);
+                        //writeText.Close();
+                    }
+                }
                     break;
                 default: 
                     Console.WriteLine("Wrong input");
